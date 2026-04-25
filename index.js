@@ -13,7 +13,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
 
-const TOKEN = process.env 'Token';
+const TOKEN = process.env 'MEU_TOKEN';
 
 // 🔧 CONFIGURAÇÃO
 const CATEGORIA_ABERTOS = '1497679326383181955';
