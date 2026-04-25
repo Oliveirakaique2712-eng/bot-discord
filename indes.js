@@ -30,7 +30,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
 
-const TOKEN = 'MTQ5MjU2MTg5Njk0NjE0MzM2Mw.Gl4jAx.z3CqbdqtqwNldX__3AE-rjMkeZlV0G8l6M7ZJg';
+const TOKEN = 'token';
 
 // 🔧 CONFIGURAÇÃO
 const CATEGORIA_ABERTOS = '1497679326383181955';
