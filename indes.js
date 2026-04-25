@@ -5,7 +5,23 @@ const {
   PermissionsBitField,
   ChannelType,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
+  StringSelectMenuBuilder,{
+  "name": "bot-discord",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "discord.js": "^14.26.3"
+  }
+}
+
   ButtonBuilder,
   ButtonStyle
 } = require('discord.js');
