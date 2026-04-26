@@ -61,7 +61,8 @@ client.on('interactionCreate', async (interaction) => {
     
     const ticketID = Math.floor(1000 + Math.random() * 9000);
     
-    const canal = await interaction.guild.channels.create({
+    const canal = await
+      interaction.guild.channels.create({
       name: `ticket-${tipo}-${ticketID}`,
       type: ChannelType.GuildText,
       parent: CATEGORIA_ABERTOS,
