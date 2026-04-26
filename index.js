@@ -120,29 +120,30 @@ client.on('interactionCreate', async (interaction) => {
 
   await interaction.reply('📄 Gerando histórico...');
 
-  // CRIA TRANSCRIPT
   const attachment = await transcripts.createTranscript(interaction.channel);
 
   const donoId = interaction.channel.topic;
 
-  // ENVIA NO PRIVADO
+  // ENVIA DM
   try {
     const user = await client.users.fetch(donoId);
+
     await user.send({
       content: '📄 Aqui está o histórico do seu ticket:',
       files: [attachment]
     });
+
   } catch (e) {
-    console.log('Erro ao enviar DM');
+    console.log('Não consegui enviar DM');
   }
 
-  // ENVIA NO PRÓPRIO CANAL (staff vê)
+  // ENVIA NO CANAL (ANTES DE DELETAR)
   await interaction.channel.send({
     content: '📄 Transcript do ticket:',
     files: [attachment]
   });
 
-  // DELETA O CANAL (não acumula)
+  // APAGA O CANAL (IMPORTANTE)
   setTimeout(() => {
     interaction.channel.delete();
   }, 5000);
