@@ -9,6 +9,8 @@ const {
   ButtonStyle
 } = require('discord.js');
 
+const transcripts = require('discord-html-transcripts'); 
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 });
@@ -56,9 +58,11 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.isStringSelectMenu() && interaction.customId === 'menu_ticket') {
 
     const tipo = interaction.values[0];
-
+    
+    const ticketID = Math.floor(1000 + Math.random() * 9000);
+    
     const canal = await interaction.guild.channels.create({
-      name: `ticket-${tipo}-${interaction.user.username}-${Math.floor(Math.random() * 9999)}`,
+      name: `ticket-${tipo}-${ticketID}`,
       type: ChannelType.GuildText,
       parent: CATEGORIA_ABERTOS,
       topic: interaction.user.id,
@@ -109,70 +113,36 @@ client.on('interactionCreate', async (interaction) => {
 
     // 🔒 FECHAR (SÓ STAFF)
     if (interaction.customId === 'fechar_ticket') {
-      if (!isStaff(interaction.member))
-        return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
 
-      await interaction.channel.setParent(CATEGORIA_FECHADOS);
-      return interaction.reply('🔒 Ticket finalizado!');
-    }
+  if (!isStaff(interaction.member))
+    return interaction.reply({ content: '❌ Apenas staff', ephemeral: true });
 
-    // 📢 CHAMAR (SÓ STAFF)
-    if (interaction.customId === 'chamar_usuario') {
-      if (!isStaff(interaction.member))
-        return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
+  await interaction.reply('📄 Gerando histórico...');
 
-      const donoId = interaction.channel.topic;
+  // CRIA TRANSCRIPT
+  const attachment = await transcripts.createTranscript(interaction.channel);
 
-      try {
-        const user = await client.users.fetch(donoId);
-        await user.send('📢 Você foi chamado no seu ticket!');
-        interaction.reply('Mensagem enviada!');
-      } catch {
-        interaction.reply('Não consegui enviar DM.');
-      }
-    }
+  const donoId = interaction.channel.topic;
 
-    // ✏️ RENOMEAR (SÓ STAFF)
-    if (interaction.customId === 'renomear_ticket') {
-      if (!isStaff(interaction.member))
-        return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
-
-      return interaction.reply({
-        content: 'Use: `!renomear novo-nome`',
-        ephemeral: true
-      });
-    }
-  }
-});
-
-// COMANDOS
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-
-  // ADD MEMBRO
-  if (message.content.startsWith('!add')) {
-    if (!isStaff(message.member)) return;
-
-    const membro = message.mentions.members.first();
-    if (!membro) return message.reply('Marca alguém.');
-
-    await message.channel.permissionOverwrites.edit(membro.id, {
-      ViewChannel: true
+  // ENVIA NO PRIVADO
+  try {
+    const user = await client.users.fetch(donoId);
+    await user.send({
+      content: '📄 Aqui está o histórico do seu ticket:',
+      files: [attachment]
     });
-
-    message.reply('Membro adicionado!');
+  } catch (e) {
+    console.log('Erro ao enviar DM');
   }
 
-  // RENOMEAR
-  if (message.content.startsWith('!renomear')) {
-    if (!isStaff(message.member)) return;
+  // ENVIA NO PRÓPRIO CANAL (staff vê)
+  await interaction.channel.send({
+    content: '📄 Transcript do ticket:',
+    files: [attachment]
+  });
 
-    const novoNome = message.content.split(' ').slice(1).join('-');
-    if (!novoNome) return message.reply('Coloque um nome.');
-
-    await message.channel.setName(`ticket-${novoNome}`);
-    message.reply('Nome alterado!');
-  }
-});
-
-client.login(TOKEN);
+  // DELETA O CANAL (não acumula)
+  setTimeout(() => {
+    interaction.channel.delete();
+  }, 5000);
+}
