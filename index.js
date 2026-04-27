@@ -76,8 +76,10 @@ client.on('interactionCreate', async (interaction) => {
     });
 
     const botoes = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustom
-
+      new ButtonBuilder().setCustomId('fechar_ticket').setLabel('🔒 Finalizar').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('chamar_usuario').setLabel('📢 Chamar').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('renomear_ticket').setLabel('✏️ Renomear').setStyle(ButtonStyle.Secondary)
+      
     // 📢 CHAMAR (SÓ STAFF)
     if (interaction.customId === 'chamar_usuario') {
       if (!isStaff(interaction.member))
