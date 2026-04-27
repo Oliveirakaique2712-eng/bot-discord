@@ -18,7 +18,6 @@ const client = new Client({
 
 const TOKEN = process.env.MEU_TOKEN;
 const CLIENT_ID = '1492561896946143363';
-const GUILD_ID  = '1492561896946143363';
 
  Registrar o comando embed
 const rest = new REST({ version '10' }).setToken(TOKEN);
