@@ -28,7 +28,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
     {
       body: [
         new SlashCommandBuilder()
-          .setName('embed')
+          .setName('embed1')
           .setDescription('Criar um embed personalizado')
           .toJSON()
       ]
