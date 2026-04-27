@@ -22,6 +22,7 @@ const CATEGORIA_ABERTOS = '1497679326383181955';
 const CANAL_LOGS = '1498344306153361528';
 const CANAL_PAINEL = '1498318862050001056';
 const CARGO_STAFF = '1497002956824907916'; // 👈 MUITO IMPORTANTE
+const CANAL_PAINEL_EMBED = '1498466480507846827';
 
 client.once('ready', async () => {
   console.log(`Bot online como ${client.user.tag}`);
@@ -45,6 +46,18 @@ client.once('ready', async () => {
     content: '🎫 Selecione o tipo de atendimento:',
     components: [row]
   });
+   // Painel de Embed
+  const canalEmbed = await client.channels.fetch(CANAL_PAINEL_EMBED);
+  const rowEmbed = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('set_titulo').setLabel('Título').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('set_descricao').setLabel('Descrição').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('set_imagem').setLabel('Imagem').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('set_canal').setLabel('Canal destino').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('enviar_embed').setLabel('Enviar').setStyle(ButtonStyle.Success)
+  );
+  await canalEmbed.send({ content: '📋 Painel de criação de embed:', components: [rowEmbed] });
+});
+
 });
 
 // FUNÇÃO: verificar se é staff
