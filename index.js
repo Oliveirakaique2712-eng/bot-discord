@@ -148,3 +148,64 @@ client.on('interactionCreate', async (interaction) => {
     interaction.channel.delete();
   }, 5000);
 }
+
+    // 📢 CHAMAR (SÓ STAFF)
+    if (interaction.customId === 'chamar_usuario') {
+      if (!isStaff(interaction.member))
+        return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
+
+      const donoId = interaction.channel.topic;
+
+      try {
+        const user = await client.users.fetch(donoId);
+        await user.send('📢 Você foi chamado no seu ticket!');
+        interaction.reply('Mensagem enviada!');
+      } catch {
+        interaction.reply('Não consegui enviar DM.');
+      }
+    }
+
+    // ✏️ RENOMEAR (SÓ STAFF)
+    if (interaction.customId === 'renomear_ticket') {
+      if (!isStaff(interaction.member))
+        return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
+
+      return interaction.reply({
+        content: 'Use: `!renomear novo-nome`',
+        ephemeral: true
+      });
+    }
+  }
+});
+
+// COMANDOS
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+
+  // ADD MEMBRO
+  if (message.content.startsWith('!add')) {
+    if (!isStaff(message.member)) return;
+
+    const membro = message.mentions.members.first();
+    if (!membro) return message.reply('Marca alguém.');
+
+    await message.channel.permissionOverwrites.edit(membro.id, {
+      ViewChannel: true
+    });
+
+    message.reply('Membro adicionado!');
+  }
+
+  // RENOMEAR
+  if (message.content.startsWith('!renomear')) {
+    if (!isStaff(message.member)) return;
+
+    const novoNome = message.content.split(' ').slice(1).join('-');
+    if (!novoNome) return message.reply('Coloque um nome.');
+
+    await message.channel.setName(`ticket-${novoNome}`);
+    message.reply('Nome alterado!');
+  }
+});
+
+client.login(TOKEN);
