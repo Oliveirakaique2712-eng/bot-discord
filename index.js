@@ -114,58 +114,68 @@ client.on('interactionCreate', async (interaction) => {
 
     // 🔒 FECHAR (SÓ STAFF)
     if (interaction.customId === 'fechar_ticket') {
-      
-    if (!isStaff(interaction.member))
-    return interaction.reply({ content: '❌ Apenas staff', ephemeral: true });
-
-  await interaction.reply('📄 Gerando histórico...');
-
-  const messages = await interaction.channel.messages.fetch({ limit: 100 });
-
-const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-
-let log = `📄 TRANSCRIPT DO TICKET\n\n`;
-
-sorted.forEach(msg => {
-  const time = new Date(msg.createdTimestamp).toLocaleString();
-  log += `[${time}] ${msg.author.tag}: ${msg.content}\n`;
-});
-      
-  const donoId = interaction.channel.topic;
-
-  // ENVIA DM
   try {
-    const user = await client.users.fetch(donoId);
 
-    await user.send({
-      content: '📄 Aqui está o histórico do seu ticket:',
-      files: [attachment]
+    if (!isStaff(interaction.member))
+      return interaction.reply({ content: '❌ Apenas staff', ephemeral: true });
+
+    await interaction.reply('📄 Gerando histórico...');
+
+    const messages = await interaction.channel.messages.fetch({ limit: 100 });
+
+    const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+    let log = `📄 TRANSCRIPT DO TICKET\n\n`;
+
+    sorted.forEach(msg => {
+      const time = new Date(msg.createdTimestamp).toLocaleString();
+      log += `[${time}] ${msg.author.tag}: ${msg.content}\n`;
     });
 
-  } catch (e) {
-    console.log('Não consegui enviar DM');
+    const buffer = Buffer.from(log, 'utf-8');
+
+    const donoId = interaction.channel.topic;
+
+    // 🔥 CANAL DE LOG (OBRIGATÓRIO PRA FUNCIONAR)
+    const logChannel = interaction.guild.channels.cache.get('1497679375540289596');
+
+    if (logChannel) {
+      await logChannel.send({
+        content: `📄 Ticket de <@${donoId}>`,
+        files: [{
+          attachment: buffer,
+          name: `ticket-${interaction.channel.name}.txt`
+        }]
+      });
+    } else {
+      console.log('Canal de log não encontrado');
+    }
+
+    // DM (opcional)
+    try {
+      const user = await client.users.fetch(donoId);
+
+      await user.send({
+        content: '📄 Aqui está o histórico do seu ticket:',
+        files: [{
+          attachment: buffer,
+          name: `ticket-${interaction.channel.name}.txt`
+        }]
+      });
+
+    } catch (e) {
+      console.log('Erro DM:', e.message);
+    }
+
+    setTimeout(() => {
+      interaction.channel.delete();
+    }, 5000);
+
+  } catch (err) {
+    console.log('ERRO GERAL:', err);
+    interaction.reply({ content: '❌ Deu erro ao fechar o ticket', ephemeral: true });
   }
-
-  // ENVIA NO CANAL (ANTES DE DELETAR)
- const logChannel = interaction.guild.channels.cache.get(CANAL_LOGS);
-
-if (logChannel) {
-  await logChannel.send({
-    content: `📄 Ticket de <@${donoId}> | ${interaction.channel.name}`,
-    files: [{
-      attachment: buffer,
-      name: `ticket-${interaction.channel.name}.txt`
-    }]
-  });
 }
-  });
-
-  // APAGA O CANAL (IMPORTANTE)
-  setTimeout(() => {
-    interaction.channel.delete();
-  }, 5000);
-}
-
     // 📢 CHAMAR (SÓ STAFF)
     if (interaction.customId === 'chamar_usuario') {
       if (!isStaff(interaction.member))
