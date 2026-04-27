@@ -37,6 +37,11 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
   );
 })();
 
+client.on('interactionCreate', async (interaction) => {
+  console.log("Interação recebida:", interaction.commandName);
+});
+
+
 client.once('clientReady', () => {
   console.log(`Bot online como ${client.user.tag}`);
 });
