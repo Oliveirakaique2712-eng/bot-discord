@@ -111,7 +111,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // BOTÕES
   if (interaction.isButton()) {
-
+  parent: CANAL_LOGS,
     // 🔒 FECHAR (SÓ STAFF)
     if (interaction.customId === 'fechar_ticket') {
   try {
