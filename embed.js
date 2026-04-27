@@ -17,8 +17,8 @@ const client = new Client({
 });
 
 const TOKEN = process.env.MEU_TOKEN;
-const CLIENT_ID = 'SEU_APPLICATION_ID'; // ID da aplicação do bot
-const GUILD_ID = 'SEU_GUILD_ID';        // ID do servidor onde vai testar
+const CLIENT_ID = '1492561896946143363'; // ID da aplicação do bot
+const GUILD_ID = '1497000392477773904';        // ID do servidor onde vai testar
 
 // Registrar o comando /embed1 só nesse servidor
 const rest = new REST({ version: '10' }).setToken(TOKEN);
