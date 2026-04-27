@@ -114,6 +114,7 @@ client.on('interactionCreate', async (interaction) => {
 
     // 🔒 FECHAR (SÓ STAFF)
     if (interaction.customId === 'fechar_ticket') {
+      
     if (!isStaff(interaction.member))
     return interaction.reply({ content: '❌ Apenas staff', ephemeral: true });
 
