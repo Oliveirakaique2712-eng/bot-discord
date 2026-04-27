@@ -137,7 +137,7 @@ client.on('interactionCreate', async (interaction) => {
     const donoId = interaction.channel.topic;
 
     // 🔥 CANAL DE LOG (OBRIGATÓRIO PRA FUNCIONAR)
-    const logChannel = interaction.guild.channels.cache.get('1497679375540289596');
+    const logChannel = interaction.guild.channels.cache.get(CANAL_LOGS);
 
     if (logChannel) {
       await logChannel.send({
