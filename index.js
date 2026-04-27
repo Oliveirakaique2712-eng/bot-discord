@@ -58,8 +58,6 @@ client.once('ready', async () => {
   await canalEmbed.send({ content: '📋 Painel de criação de embed:', components: [rowEmbed] });
 });
 
-});
-
 // FUNÇÃO: verificar se é staff
 function isStaff(member) {
   return member.roles.cache.has(CARGO_STAFF);
