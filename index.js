@@ -9,19 +9,22 @@ const {
   ButtonStyle
 } = require('discord.js');
 
-const transcripts = require('discord-html-transcripts'); 
-
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 });
 
 const TOKEN = process.env.MEU_TOKEN;
 
 // 🔧 CONFIGURAÇÃO
-const CATEGORIA_ABERTOS = '1497679326383181955';
-const CANAL_LOGS = '1497679375540289596';
-const CANAL_PAINEL = '1498318862050001056';
-const CARGO_STAFF = '1497002956824907916'; // 👈 MUITO IMPORTANTE
+const CATEGORIA_ABERTOS   = '1497679326383181955';
+const CATEGORIA_FECHADOS  = '1497679375540289596'; // 👈 coloque o ID real aqui
+const CANAL_LOGS          = '1497679375540289596';
+const CANAL_PAINEL        = '1498318862050001056';
+const CARGO_STAFF         = '1497002956824907916';
 
 client.once('ready', async () => {
   console.log(`Bot online como ${client.user.tag}`);
@@ -32,163 +35,144 @@ client.once('ready', async () => {
     .setCustomId('menu_ticket')
     .setPlaceholder('Escolha o tipo de ticket')
     .addOptions([
-      { label: '🐛 Bug', value: 'bug' },
-      { label: '💰 Compra', value: 'compra' },
-      { label: '❓ Ajuda', value: 'ajuda' },
-      { label: '🎬 Audiovisual', value: 'audiovisual' },
-      { label: '🎨 Design', value: 'design' }
+      { label: '🐛 Bug',        value: 'bug'        },
+      { label: '💰 Compra',     value: 'compra'     },
+      { label: '❓ Ajuda',      value: 'ajuda'      },
+      { label: '🎬 Audiovisual',value: 'audiovisual'},
+      { label: '🎨 Design',     value: 'design'     }
     ]);
 
   const row = new ActionRowBuilder().addComponents(menu);
 
-  canal.send({
+  await canal.send({
     content: '🎫 Selecione o tipo de atendimento:',
     components: [row]
   });
 });
 
-// FUNÇÃO: verificar se é staff
 function isStaff(member) {
   return member.roles.cache.has(CARGO_STAFF);
 }
 
 client.on('interactionCreate', async (interaction) => {
 
-  // MENU
+  // ── MENU ──────────────────────────────────────────────────────────────────
   if (interaction.isStringSelectMenu() && interaction.customId === 'menu_ticket') {
-
-    const tipo = interaction.values[0];
-    
+    const tipo     = interaction.values[0];
     const ticketID = Math.floor(1000 + Math.random() * 9000);
-    
-    const canal = await
-      interaction.guild.channels.create({
+
+    const canal = await interaction.guild.channels.create({
       name: `ticket-${tipo}-${ticketID}`,
       type: ChannelType.GuildText,
       parent: CATEGORIA_ABERTOS,
       topic: interaction.user.id,
       permissionOverwrites: [
-        {
-          id: interaction.guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel]
-        },
-        {
-          id: interaction.user.id,
-          allow: [PermissionsBitField.Flags.ViewChannel]
-        },
-        {
-          id: CARGO_STAFF,
-          allow: [PermissionsBitField.Flags.ViewChannel]
-        }
+        { id: interaction.guild.id,   deny:  [PermissionsBitField.Flags.ViewChannel] },
+        { id: interaction.user.id,    allow: [PermissionsBitField.Flags.ViewChannel] },
+        { id: CARGO_STAFF,            allow: [PermissionsBitField.Flags.ViewChannel] }
       ]
     });
 
     const botoes = new ActionRowBuilder().addComponents(
-
       new ButtonBuilder()
         .setCustomId('fechar_ticket')
         .setLabel('🔒 Finalizar')
         .setStyle(ButtonStyle.Danger),
-
       new ButtonBuilder()
         .setCustomId('chamar_usuario')
         .setLabel('📢 Chamar')
         .setStyle(ButtonStyle.Primary),
-
       new ButtonBuilder()
         .setCustomId('renomear_ticket')
         .setLabel('✏️ Renomear')
         .setStyle(ButtonStyle.Secondary)
     );
 
-    canal.send({
+    await canal.send({
       content: `🎫 Ticket de <@${interaction.user.id}> | Tipo: **${tipo}**`,
       components: [botoes]
     });
 
-    interaction.reply({ content: '✅ Ticket criado!', ephemeral: true });
+    await interaction.reply({ content: '✅ Ticket criado!', ephemeral: true });
   }
 
-  // BOTÕES
+  // ── BOTÕES ────────────────────────────────────────────────────────────────
   if (interaction.isButton()) {
-  parent: CANAL_LOGS,
+
     // 🔒 FECHAR (SÓ STAFF)
     if (interaction.customId === 'fechar_ticket') {
-  try {
+      if (!isStaff(interaction.member))
+        return interaction.reply({ content: '❌ Apenas staff pode fechar tickets.', ephemeral: true });
 
-    if (!isStaff(interaction.member))
-      return interaction.reply({ content: '❌ Apenas staff', ephemeral: true });
+      try {
+        await interaction.reply('📄 Gerando histórico...');
 
-    await interaction.reply('📄 Gerando histórico...');
+        // Busca mensagens e ordena por horário
+        const fetched = await interaction.channel.messages.fetch({ limit: 100 });
+        const sorted  = [...fetched.values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-    const messages = await interaction.channel.messages.fetch({ limit: 100 });
+        // Monta o log formatado
+        let log = `📄 TRANSCRIPT DO TICKET: #${interaction.channel.name}\n`;
+        log    += `📅 Fechado em: ${new Date().toLocaleString('pt-BR')}\n`;
+        log    += `${'─'.repeat(60)}\n\n`;
 
-    const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+        for (const msg of sorted) {
+          // Pula mensagens sem conteúdo de texto (ex: só embed/attachment sem texto)
+          const conteudo = msg.content || (msg.attachments.size ? '[arquivo anexado]' : '[sem conteúdo]');
+          const horario  = new Date(msg.createdTimestamp).toLocaleString('pt-BR');
+          log += `[${horario}] ${msg.author.tag}: ${conteudo}\n`;
+        }
 
-    let log = `📄 TRANSCRIPT DO TICKET\n\n`;
+        const buffer = Buffer.from(log, 'utf-8');
+        const donoId = interaction.channel.topic;
 
-    sorted.forEach(msg => {
-      const time = new Date(msg.createdTimestamp).toLocaleString();
-      log += `[${time}] ${msg.author.tag}: ${msg.content}\n`;
-    });
+        // Envia no canal de logs ✅ (sem o dois-pontos errado)
+        const logChannel = interaction.guild.channels.cache.get(CANAL_LOGS);
+        if (logChannel) {
+          await logChannel.send({
+            content: `📄 Ticket fechado — aberto por <@${donoId}> | Canal: **${interaction.channel.name}**`,
+            files: [{ attachment: buffer, name: `${interaction.channel.name}.txt` }]
+          });
+        } else {
+          console.warn('Canal de log não encontrado:', CANAL_LOGS);
+        }
 
-    const buffer = Buffer.from(log, 'utf-8');
+        // DM pro dono do ticket com log formatado
+        try {
+          const user = await client.users.fetch(donoId);
+          await user.send({
+            content: `📄 Seu ticket **${interaction.channel.name}** foi finalizado. Segue o histórico:`,
+            files: [{ attachment: buffer, name: `${interaction.channel.name}.txt` }]
+          });
+        } catch (e) {
+          console.warn('Não foi possível enviar DM:', e.message);
+        }
 
-    const donoId = interaction.channel.topic;
+        // Move para categoria de fechados antes de deletar
+        await interaction.channel.setParent(CATEGORIA_FECHADOS, { lockPermissions: false });
+        await interaction.channel.setName(`fechado-${interaction.channel.name}`);
 
-    // 🔥 CANAL DE LOG (OBRIGATÓRIO PRA FUNCIONAR)
-    const logChannel = interaction.guild.channels.cache.get: ('1497679375540289596');
+        // Deleta após 5 segundos
+        setTimeout(() => interaction.channel.delete().catch(console.error), 5000);
 
-    if (logChannel) {
-      await logChannel.send({
-        content: `📄 Ticket de <@${donoId}>`,
-        files: [{
-          attachment: buffer,
-          name: `ticket-${interaction.channel.name}.txt`
-        }]
-      });
-    } else {
-      console.log('Canal de log não encontrado');
+      } catch (err) {
+        console.error('ERRO ao fechar ticket:', err);
+        interaction.followUp({ content: '❌ Erro ao fechar o ticket.', ephemeral: true });
+      }
     }
 
-    // DM (opcional)
-    try {
-      const user = await client.users.fetch(donoId);
-
-      await user.send({
-        content: '📄 Aqui está o histórico do seu ticket:',
-        files: [{
-          attachment: buffer,
-          name: `ticket-${interaction.channel.name}.txt`
-        }]
-      });
-
-    } catch (e) {
-      console.log('Erro DM:', e.message);
-    }
-
-    setTimeout(() => {
-      interaction.channel.delete();
-    }, 5000);
-
-  } catch (err) {
-    console.log('ERRO GERAL:', err);
-    interaction.reply({ content: '❌ Deu erro ao fechar o ticket', ephemeral: true });
-  }
-}
     // 📢 CHAMAR (SÓ STAFF)
     if (interaction.customId === 'chamar_usuario') {
       if (!isStaff(interaction.member))
         return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
 
       const donoId = interaction.channel.topic;
-
       try {
         const user = await client.users.fetch(donoId);
-        await user.send('📢 Você foi chamado no seu ticket!');
-        interaction.reply('Mensagem enviada!');
+        await user.send('📢 Você foi chamado no seu ticket! Volte ao servidor.');
+        await interaction.reply({ content: '✅ Usuário notificado por DM.', ephemeral: true });
       } catch {
-        interaction.reply('Não consegui enviar DM.');
+        await interaction.reply({ content: '❌ Não consegui enviar DM para o usuário.', ephemeral: true });
       }
     }
 
@@ -197,41 +181,31 @@ client.on('interactionCreate', async (interaction) => {
       if (!isStaff(interaction.member))
         return interaction.reply({ content: '❌ Apenas a equipe pode fazer isso.', ephemeral: true });
 
-      return interaction.reply({
-        content: 'Use: `!renomear novo-nome`',
-        ephemeral: true
-      });
+      await interaction.reply({ content: 'Use o comando: `!renomear novo-nome`', ephemeral: true });
     }
   }
 });
 
-// COMANDOS
+// ── COMANDOS DE TEXTO ──────────────────────────────────────────────────────
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  // ADD MEMBRO
+  // !add @membro
   if (message.content.startsWith('!add')) {
     if (!isStaff(message.member)) return;
-
     const membro = message.mentions.members.first();
     if (!membro) return message.reply('Marca alguém.');
-
-    await message.channel.permissionOverwrites.edit(membro.id, {
-      ViewChannel: true
-    });
-
-    message.reply('Membro adicionado!');
+    await message.channel.permissionOverwrites.edit(membro.id, { ViewChannel: true });
+    await message.reply(`✅ ${membro.user.tag} adicionado ao ticket.`);
   }
 
-  // RENOMEAR
+  // !renomear novo-nome
   if (message.content.startsWith('!renomear')) {
     if (!isStaff(message.member)) return;
-
     const novoNome = message.content.split(' ').slice(1).join('-');
-    if (!novoNome) return message.reply('Coloque um nome.');
-
+    if (!novoNome) return message.reply('Coloque um nome. Ex: `!renomear vip-compra`');
     await message.channel.setName(`ticket-${novoNome}`);
-    message.reply('Nome alterado!');
+    await message.reply('✅ Nome alterado!');
   }
 });
 
