@@ -19,7 +19,7 @@ const TOKEN = process.env.MEU_TOKEN;
 
 // 🔧 CONFIGURAÇÃO
 const CATEGORIA_ABERTOS = '1497679326383181955';
-const CATEGORIA_FECHADOS = '1498318862050001056';
+const CANAL_LOGS = '1498318862050001056';
 const CANAL_PAINEL = '1498318862050001056';
 const CARGO_STAFF = '1497002956824907916'; // 👈 MUITO IMPORTANTE
 
@@ -120,8 +120,17 @@ client.on('interactionCreate', async (interaction) => {
 
   await interaction.reply('📄 Gerando histórico...');
 
-  const attachment = await transcripts.createTranscript(interaction.channel);
+  const messages = await interaction.channel.messages.fetch({ limit: 100 });
 
+const sorted = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+let log = `📄 TRANSCRIPT DO TICKET\n\n`;
+
+sorted.forEach(msg => {
+  const time = new Date(msg.createdTimestamp).toLocaleString();
+  log += `[${time}] ${msg.author.tag}: ${msg.content}\n`;
+});
+      
   const donoId = interaction.channel.topic;
 
   // ENVIA DM
@@ -138,9 +147,17 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   // ENVIA NO CANAL (ANTES DE DELETAR)
-  await interaction.channel.send({
-    content: '📄 Transcript do ticket:',
-    files: [attachment]
+ const logChannel = interaction.guild.channels.cache.get(CANAL_LOGS);
+
+if (logChannel) {
+  await logChannel.send({
+    content: `📄 Ticket de <@${donoId}> | ${interaction.channel.name}`,
+    files: [{
+      attachment: buffer,
+      name: `ticket-${interaction.channel.name}.txt`
+    }]
+  });
+}
   });
 
   // APAGA O CANAL (IMPORTANTE)
