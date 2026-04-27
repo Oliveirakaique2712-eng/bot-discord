@@ -17,14 +17,15 @@ const client = new Client({
 });
 
 const TOKEN = process.env.MEU_TOKEN;
-const CLIENT_ID = '1492561896946143363'; // Application ID do seu bot
+const CLIENT_ID = 'SEU_APPLICATION_ID'; // ID da aplicação do bot
+const GUILD_ID = 'SEU_GUILD_ID';        // ID do servidor onde vai testar
 
-// Registrar o comando /embed globalmente
+// Registrar o comando /embed1 só nesse servidor
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
 (async () => {
   await rest.put(
-    Routes.applicationCommands(CLIENT_ID),
+    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
     {
       body: [
         new SlashCommandBuilder()
@@ -36,13 +37,12 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
   );
 })();
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`Bot online como ${client.user.tag}`);
 });
 
 client.on('interactionCreate', async (interaction) => {
-  // Slash command /embed
-  if (interaction.isChatInputCommand() && interaction.commandName === 'embed') {
+  if (interaction.isChatInputCommand() && interaction.commandName === 'embed1') {
     const modal = new ModalBuilder()
       .setCustomId('embed_modal')
       .setTitle('Criar Embed');
@@ -78,7 +78,6 @@ client.on('interactionCreate', async (interaction) => {
     await interaction.showModal(modal);
   }
 
-  // Modal enviado
   if (interaction.isModalSubmit() && interaction.customId === 'embed_modal') {
     const titulo    = interaction.fields.getTextInputValue('titulo');
     const descricao = interaction.fields.getTextInputValue('descricao');
