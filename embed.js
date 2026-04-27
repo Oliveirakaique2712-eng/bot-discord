@@ -23,7 +23,7 @@ const CLIENT_ID = '1492561896946143363';
 const rest = new REST({ version '10' }).setToken(TOKEN);
 (async () = {
   await rest.put(
-    Routes.applicationCommands(CLIENT_ID, GUILD_ID),
+    Routes.applicationCommands(CLIENT_ID),
     { body [
       new SlashCommandBuilder()
         .setName('embed')
