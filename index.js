@@ -6,7 +6,11 @@ const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  EmbedBuilder,
+  REST,
+  Routes,
+  SlashCommandBuilder
 } = require('discord.js');
 
 const transcripts = require('discord-html-transcripts'); 
@@ -16,6 +20,37 @@ const client = new Client({
 });
 
 const TOKEN = process.env.MEU_TOKEN;
+const CLIENT_ID = process.env.MEU_CLIENT; // ID do bot
+const GUILD_ID = process.env.MEU_GUILD;   // ID do servidor
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName('embed1')
+    .setDescription('Cria um embed simples')
+    .addStringOption(opt =>
+      opt.setName('titulo').setDescription('Título do embed').setRequired(true))
+    .addStringOption(opt =>
+      opt.setName('descricao').setDescription('Descrição do embed').setRequired(true))
+    .addStringOption(opt =>
+      opt.setName('imagem').setDescription('URL da imagem').setRequired(false))
+    .addChannelOption(opt =>
+      opt.setName('canal').setDescription('Canal destino').setRequired(true))
+].map(cmd => cmd.toJSON());
+
+const rest = new REST({ version: '10' }).setToken(TOKEN);
+
+(async () => {
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(MEU_CLIENT, MEU_GUILD),
+      { body: commands }
+    );
+    console.log('✅ Comando /embed1 registrado');
+  } catch (err) {
+    console.error(err);
+  }
+})();
+
 
 // 🔧 CONFIGURAÇÃO
 const CATEGORIA_ABERTOS = '1497679326383181955';
@@ -46,24 +81,39 @@ client.once('ready', async () => {
     content: '🎫 Selecione o tipo de atendimento:',
     components: [row]
   });
-   // Painel de Embed
-  const canalEmbed = await client.channels.fetch(CANAL_PAINEL_EMBED);
-  const rowEmbed = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('set_titulo').setLabel('Título').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('set_descricao').setLabel('Descrição').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('set_imagem').setLabel('Imagem').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('set_canal').setLabel('Canal destino').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('enviar_embed').setLabel('Enviar').setStyle(ButtonStyle.Success)
-  );
-  await canalEmbed.send({ content: '📋 Painel de criação de embed:', components: [rowEmbed] });
-});
-
+   
 // FUNÇÃO: verificar se é staff
 function isStaff(member) {
   return member.roles.cache.has(CARGO_STAFF);
 }
 
 client.on('interactionCreate', async (interaction) => {
+
+  client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === 'embed1') {
+    const titulo = interaction.options.getString('titulo');
+    const descricao = interaction.options.getString('descricao');
+    const imagem = interaction.options.getString('imagem');
+    const canal = interaction.options.getChannel('canal');
+
+    const embed = new EmbedBuilder()
+      .setTitle(titulo)
+      .setDescription(descricao)
+      .setColor(0x00AE86);
+
+    if (imagem) embed.setImage(imagem);
+
+    if (!canal || canal.type !== ChannelType.GuildText) {
+      return interaction.reply({ content: '❌ Canal inválido.', ephemeral: true });
+    }
+
+    await canal.send({ embeds: [embed] });
+    await interaction.reply({ content: '✅ Embed enviado!', ephemeral: true });
+  }
+});
+
 
   // MENU
   if (interaction.isStringSelectMenu() && interaction.customId === 'menu_ticket') {
