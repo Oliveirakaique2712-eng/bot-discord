@@ -42,7 +42,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 (async () => {
   try {
     await rest.put(
-      Routes.applicationGuildCommands(MEU_CLIENT, MEU_GUILD),
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: commands }
     );
     console.log('✅ Comando /embed1 registrado');
@@ -87,12 +87,10 @@ function isStaff(member) {
   return member.roles.cache.has(CARGO_STAFF);
 }
 
+// 🔧 TODAS AS INTERAÇÕES (slash + painel + botões)
 client.on('interactionCreate', async (interaction) => {
-
-  client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-
-  if (interaction.commandName === 'embed1') {
+  // Slash command /embed1
+  if (interaction.isChatInputCommand() && interaction.commandName === 'embed1') {
     const titulo = interaction.options.getString('titulo');
     const descricao = interaction.options.getString('descricao');
     const imagem = interaction.options.getString('imagem');
@@ -110,7 +108,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     await canal.send({ embeds: [embed] });
-    await interaction.reply({ content: '✅ Embed enviado!', ephemeral: true });
+    return interaction.reply({ content: '✅ Embed enviado!', ephemeral: true });
   }
 });
 
